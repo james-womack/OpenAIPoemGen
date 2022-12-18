@@ -1,10 +1,12 @@
 use async_openai::error::OpenAIError;
-use async_openai::types::CreateCompletionRequest;
-use async_openai::{Client, Completion};
+use async_openai::types::{
+    CreateCompletionRequest, CreateImageRequest, ImageResponse, ImageSize, ResponseFormat,
+};
+use async_openai::{Client, Completion, Image};
 use futures::StreamExt;
 use std::fmt::{Display, Formatter};
 use std::time::UNIX_EPOCH;
-use tokio::sync::OnceCell;
+
 
 pub type AiResult<T> = std::result::Result<T, OpenAIError>;
 
@@ -91,7 +93,7 @@ impl AiSettings {
     pub fn new_title() -> Self {
         Self {
             model: AiType::Davinci,
-            max_tokens: 128,
+            max_tokens: 80,
             n: 1,
             temperature: 0.769,
         }
@@ -135,25 +137,46 @@ pub async fn get_ai_response(
     Ok(full_text)
 }
 
-pub fn save_to_file(
+pub async fn save_to_file(
     title: &str,
     input_prompt: &str,
     generated_prompt: &str,
-    text: &str,
-) -> Result<(), std::io::Error> {
+    text: &str
+) -> Result<String, std::io::Error> {
     // get the current unix timestamp
     let time = std::time::SystemTime::now();
     let time = time.duration_since(UNIX_EPOCH).expect("Unable to get time");
     let timestamp = time.as_secs();
+
     // create directory
     std::fs::create_dir_all("./poem")?;
+
     // Replace bad filename characters
-    let filename = title.replace(['"', ':', ',', '?', '/', '\''], "");
+    let filename = title.replace(['"', ':', ',', '?', '/', '\'', '\n'], "");
+
     // replace spaces with -
-    let filename = filename.split_whitespace().collect::<Vec<&str>>().join("-");
+    let poem_name = filename.split_whitespace().collect::<Vec<&str>>().join("-");
+
     // create contents and write to file
     let filename = format!("./poem/{timestamp}-{filename}.poem.txt");
     let sep = "-".repeat(80);
     let text = format!("{title}\n{sep}\nINPUT PROMPT: {input_prompt}\n{sep}\nGENERATED PROMPT:\n{generated_prompt}\n{sep}\nPOEM:\n{sep}\n{text}\n{sep}");
-    std::fs::write(filename, text)
+    std::fs::write(filename.as_str(), text)?;
+    Ok(format!("./poem/{poem_name}"))
+}
+
+pub async fn get_image(
+    client: &Client,
+    prompt: &str,
+    n: u8,
+    size: ImageSize,
+) -> AiResult<ImageResponse> {
+    let request = CreateImageRequest {
+        n: Some(n),
+        size: Some(size),
+        response_format: Some(ResponseFormat::Url),
+        prompt: prompt.to_string(),
+        user: Some("poem-gen".to_string()),
+    };
+    Image::create(client, request).await
 }
