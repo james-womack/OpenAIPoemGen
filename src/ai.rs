@@ -45,6 +45,7 @@ pub enum PoemType {
     Limerick,
     Ballad,
     Epitaph,
+    DrSeuss,
     Ode,
     FreeVerse,
 }
@@ -65,6 +66,7 @@ impl Display for PoemType {
                 PoemType::Limerick => "Limerick",
                 PoemType::Ballad => "Ballad",
                 PoemType::Epitaph => "Epitaph",
+                PoemType::DrSeuss => "Dr. Seuss Poem",
                 PoemType::Ode => "Ode",
                 PoemType::FreeVerse => "Free Verse Poem",
             }

@@ -29,7 +29,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         &client,
     )
     .await?.trim().to_string();
-
     let generated_poem_prompt = format!("Write a {rand_type} about:\n{full_text}");
     let title_prompt = format!("Write a title for a {rand_type} about:\n{full_text}");
     println!("{}", "-".repeat(80));
